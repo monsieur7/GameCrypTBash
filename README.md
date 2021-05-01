@@ -7,3 +7,5 @@ TODO :
 cleanup des fichiers temporaires
 sécurisation des clés privés / publics ?
 (le jeu en lui même)
+
+Dépendences : Openssl, netcat

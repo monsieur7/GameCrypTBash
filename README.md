@@ -1,7 +1,7 @@
 # GameCrypTBash
 Bash Project 2021-ESIREM
 Implémenté : 
--Communication Client-Servur sécurisé
+-Communication Client-Servur sécurisé par echange de clé DH + aes256
 
 TODO :
 + cleanup des fichiers temporaires

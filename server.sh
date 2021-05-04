@@ -9,7 +9,7 @@ host=$1
 port_out=$2
 port_in=$3
 fi
-nc -l -k -p $port_in >/tmp/output 2>/dev/null & # launch daemon
+nc -l -k $port_in >/tmp/output 2>/dev/null & # launch daemon
 if [ ! -s dhb2.pem ] 
 then 
 openssl genpkey -genparam -algorithm DH -out dhb2.pem 
@@ -19,7 +19,7 @@ openssl pkey -in dhkey2.pem -pubout -out dhpub2.pem
 sleep 2
 echo "sending parameters"
 cat dhb2.pem
-cat dhb2.pem | netcat -q 1 $host $port_out
+cat dhb2.pem | netcat -w 1 $host $port_out
 sleep 2
 
 echo "listening for public key"
@@ -35,7 +35,7 @@ cat /tmp/output
 echo "sending public key"
 cat  dhpub2.pem
 sleep 2
-cat dhpub2.pem | nc -q 1 $host $port_out
+cat dhpub2.pem | nc -w 1 $host $port_out
 
 openssl pkeyutl -derive -inkey dhkey2.pem -peerkey <(cat /tmp/output) -out alice_shared_secret.bin
 base64 alice_shared_secret.bin
@@ -47,7 +47,7 @@ base64 alice_shared_secret.bin #debug
 #secure exchange begin here
 sleep 5
 send() {
-echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>/dev/null | nc -q 1 $host $port_out
+echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>/dev/null | nc -w 1 $host $port_out
 }
 
 
@@ -69,7 +69,7 @@ echo "" >/tmp/output
 if echo "$result" | tr -d " " | grep "^q$" 
 then
 pkill "nc -l -k -p $port_in"
-./clean.sh
+#./clean.sh
 exit
 elif echo "$result" | tr -d " " | grep "^clear$"
 then

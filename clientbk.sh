@@ -10,7 +10,7 @@ port_in=$2
 port_out=$3
 fi
 #touch /tmp/outputclient
-nc -l -k -p $port_in >outputclient 2>log.txt & # launch daemon
+nc -l -k $port_in >outputclient 2>log.txt & # launch daemon
 while (( $(wc -c outputclient | cut -d " " -f 1) <= 1  ))
 do
 #debug
@@ -24,7 +24,7 @@ openssl pkey -in dhkey1.pem -pubout -out dhpub1.pem
 echo "sending public key"
 sleep 5
 cat  dhpub1.pem
-cat dhpub1.pem | nc -N -q 1 localhost $port_out # sending 
+cat dhpub1.pem | nc -N -w 1 localhost $port_out # sending 
 echo "listenig for public key"
 sleep 5
 #echo "ready" | nc -N -q 1 $host $port
@@ -45,7 +45,7 @@ base64 bob_shared_secret.bin #debug
 # secure exchange begin here
 sleep 5
 send() {
-echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>aeslog.txt | nc -q 1 $host $port_out
+echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>aeslog.txt | nc -w 1 $host $port_out
 }
 
 receive(){

@@ -10,7 +10,7 @@ port_in=$2
 port_out=$3
 fi
 #touch /tmp/outputclient
-nc -l -k $port_in >outputclient 2>log.txt & # launch daemon
+nc -l -k $port_in >outputclient 2>>log.txt & # launch daemon
 while (( $(wc -c outputclient | cut -d " " -f 1) <= 1  ))
 do
 #debug

@@ -63,7 +63,7 @@ echo "" >output
 echo "beginning receiving"
 while true
 do
-#echo "waiting"
+
 cat output | tr -d '\000'| grep -q -E '[A-Za-z/\\=]+'
 while (( $? > 0))
 do
@@ -72,7 +72,7 @@ sleep 1
 cat output | tr -d '\000' | grep -q -E '^[A-Za-z/\\=]+'
 done
 printf "\n"
-#echo "decoding"
+# RECEIVE LOOP 
 result=$(cat output |tr -d '\000' | grep -E '^[A-Za-z/\\=]+' | openssl enc -aes256 -base64 -kfile alice_shared_secret.bin -d 2>/dev/null )
 if echo "$result" | tr -d " " | grep "^q$" 
 then

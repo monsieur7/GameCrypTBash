@@ -1,4 +1,7 @@
 #!/bin/bash
+first_time=0
+mdp=""
+id=""
 if (($# != 3)) 
 then
 host="localhost"
@@ -44,7 +47,7 @@ base64 bob_shared_secret.bin #debug
 #echo ""> /tmp/outputclient #erase file for security
 echo "" >outputclient
 # secure exchange begin here
-sleep 5
+#sleep 5
 send() {
 echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>aeslog.txt | nc -w 1 $host $port_out
 }
@@ -62,9 +65,27 @@ echo "decoding"
 return cat outputclient |tr -d '\000' | grep -E '=+' | openssl enc -aes256 -base64-kfile alice_shared_secret.bin -d 2>/dev/null 
 #rm -rf /tmp/output
 }
+
+
+##begin(){
+#echo "Bonjour, que voulez vous faire ?"
+#echo "q pour quiter"
+#if (( first_time == 0 ))
+#then
+#	echo "que voulez vous être ? "
+#	echo "1 pour un elf"
+#	echo "2 pour un orc"
+#	echo "3 pour un humain"
+#	read -r -p "choix ? :" type_game
+#	if (($type_game == 0 )) then
+		# GAME
+#}
+
+#MAIN
 while true
 do
 IFS=""
+#begin
 read -r -p "input : " input
 if echo $input | tr -d " " | grep -E '^q'
 then

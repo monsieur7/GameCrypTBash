@@ -26,7 +26,7 @@ fi
 # loading mdp + id
 if [ ! -s player.txt ]
 then
-touch player.txt
+	touch player.txt
 fi
 #	echo "player.txt exist"
 #	type="$(cat player.txt | cut -d " " -f 1)"
@@ -41,7 +41,7 @@ fi
 #else 
 #	touch player.txt
 #0	echo "creating file"
-fi
+#fi
 
 
 
@@ -111,23 +111,88 @@ then
 fi
 }
 
-modif() {
-# modif variable in file
+modif(){
+	# modif variable in file
 if (( $1 == "health" ))
 then
 	# modif
 	sed -i "s/health:$(read_var health)/health:$2/g" player.txt
+else if (( $1 == "health_boss" ))
+then
+	# modif
+	sed -i "s/health_boss:$(read_var health_boss)/health_boss:$2/g" player.txt
+else if (( $1 == "xp" ))
+then
+	# modif
+	sed -i "s/xp:$(read_var xp)/xp:$2/g" player.txt
+else if (( $1 == "level" ))
+then
+	# modif
+	sed -i "s/level:$(read_var level)/level:$2/g" player.txt
+else if (( $1 == "argent" ))
+then
+	# modif
+	sed -i "s/argent:$(read_var argent)/argent:$2/g" player.txt
 
+else if (( $1 == "id" ))
+then
+	# modif
+	sed -i "s/id:$(read_var id)/id:$2/g" player.txt
+else if (( $1 == "nom" ))
+then
+	# modif
+	sed -i "s/nom:$(read_var nom)/nom:$2/g" player.txt
+else if (( $1 == "mdp" ))
+then
+	# modif
+	sed -i "s/mdp:$(read_var mdp)/mdp:$2/g" player.txt
+else if (( $1 == "type" ))
+then
+	# modif
+	sed -i "s/type:$(read_var type)/type:$2/g" player.txt
 fi
+
 }
 
-read_var() {
+read_var(){
 #read var in file
+
 if (( $1 == "health" ))
 then
 	cat player.txt | cut -d " " -f 8 | cut -d ":" -f 2
-fi
 
+else if (( $1 == "health_boss" ))
+then
+	cat player.txt | cut -d " " -f 9 | cut -d ":" -f 2
+
+else if (( $1 == "mdp" ))
+then
+	cat player.txt | cut -d " " -f 2 | cut -d ":" -f 2
+
+else if (( $1 == "id" ))
+then
+	cat player.txt | cut -d " " -f 3 | cut -d ":" -f 2
+
+else if (( $1 == "type" ))
+then
+	cat player.txt | cut -d " " -f 1 | cut -d ":" -f 2
+
+else if (( $1 == "nom" ))
+then
+	cat player.txt | cut -d " " -f 4 | cut -d ":" -f 2
+
+else if (( $1 == "argent" ))
+then
+	cat player.txt | cut -d " " -f 5 | cut -d ":" -f 2
+
+else if (( $1 == "level" ))
+then
+	cat player.txt | cut -d " " -f 6 | cut -d ":" -f 2
+
+else if (( $1 == "xp" ))
+then
+	cat player.txt | cut -d " " -f 7 | cut -d ":" -f 2
+fi
 
 }
 health_calc() {
@@ -178,7 +243,8 @@ else
 		$health_calc="$(echo $health_calc - 2 | bc)"
 	fi
 	#HEALTH - 2
-fi	
+fi
+echo $msg	
 send $msg
 modif "health" $health
 modif "health_boss" $health
@@ -255,9 +321,9 @@ do
 		pkill "$!"
 		pkill -f "nc -l -k $port_in"
 		pkill -f "nc -l -k $port_out"
-		echo "type:$type mdp:$mdp id:$id nom:$nom argent:$argent level:$level xp:$xp health:$health health_boss:$health_boss" >player.txt # mettre nomduchamp:champ
+		#echo "type:$type mdp:$mdp id:$id nom:$nom argent:$argent level:$level xp:$xp health:$health health_boss:$health_boss" >player.txt # mettre nomduchamp:champ
 		echo " player.txt : " && cat player.txt
-		echo $argent $level $xp $health
+		#echo $argent $level $xp $health
 		exit
 	elif echo "$result" | tr -d " " | grep "^clear$"
 	then

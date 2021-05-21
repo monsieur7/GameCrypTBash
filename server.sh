@@ -97,6 +97,42 @@ base64 alice_shared_secret.bin #debug
 send() {
 echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>/dev/null | nc -w 1 $host $port_out
 }
+quit(){
+rm -rf output
+	#./clean.sh
+	echo $!
+	echo "pid to kill " $!
+	pkill "$!"
+	pkill -f "nc -l -k $port_in"
+	pkill -f "nc -l -k $port_out"
+	#echo "type:$type mdp:$mdp id:$id nom:$nom argent:$argent level:$level xp:$xp health:$health health_boss:$health_boss" >player.txt # mettre nomduchamp:champ
+	echo " player.txt : " && cat player.txt
+	#echo $argent $level $xp $health
+	exit
+}
+init_dungeon(){
+echo "init donjon"
+level_dungeon=$(read_var level)
+echo $level_dungeon
+if [ "$level_dungeon" == "1" ]
+then
+	modif health_boss 10
+	echo "level 1"
+	return
+elif [ "$level_dungeon" == "2" ]
+then
+
+	modif health_boss 15
+	echo "level 2"
+	return
+elif [ "$level_dungeon" == "3" ]
+then
+	echo "level 3"
+	modif health_boss 20
+	return
+fi
+}
+
 dungeon(){
 level_dungeon=$(read_var level)
 #echo $level_dungeon
@@ -211,15 +247,15 @@ health_calc=$(read_var health)
 health_boss_calc=$(read_var health)
 echo "before :boss" $health_boss_calc "player" $health_calc
 # calcule HEALTH
-if ["$(read_var type)" == "1" ]
+if [ "$(read_var type)" == "1" ]
 then
-	health_boss="$(echo $health_boss - 1 | bc)"
-	msg+="vous avez infligez 1 de dégats au dragon "
+	health_boss_calc="$(echo $health_boss_calc - 1 | bc)"
+	msg+="vous avez infligez 1 de degats au dragon "
 	# DRAGON - 1
 	#HEALTH - 1 3 fois sur 4
 	if [ "$[RANDOM % 4]" == "3" ]
 	then
-		 msg+="vous n'avez pas pris de dégats "
+		 msg+="vous n'avez pas pris de degats "
 	else
 		msg+="vous avez prix 1 de degats "
 		health_calc="$(echo $health_calc - 1 | bc)"
@@ -228,10 +264,11 @@ elif [ "$(read_var type)" == "2" ]
 then
 	if [ "$[RANDOM % 2]" == "1" ]
 	then
-		msg+="vous avez infliger 2 de degats au dragon "
+		msg+="vous avez infliger 3 de degats au dragon "
+		health_boss_calc="$(echo $health_boss_calc - 3 | bc)"
 	else
-		msg+="vous avez pris 1 de dégats "
-		health_calc="$(echo $health_calc - 1 | bc)"
+		msg+="vous avez infligez 2 de degats au dragon "
+		health_boss_calc="$(echo $health_boss_calc - 2 | bc)"
 	fi
 	if [ "$[RANDOM % 4]" == "3" ]
 	then
@@ -244,22 +281,66 @@ then
 	#HEALTH - 2
 else 
 	health_boss_calc="$(echo $health_boss_calc - 3 | bc)"
-	msg+="vous avez infliez trois de degats au dragon "
+	msg+="vous avez infligez trois de degats au dragon "
 	#DRAGON - 3
 	if [ "$[RANDOM % 4]" == "3" ]
 	then
-		 msg+="vous n'avez pas pris de dégats"
+		 msg+="vous n'avez pas pris de degats"
 	else
 		msg+="vous avez prix 2 de degats"
 		health_calc="$(echo $health_calc - 2 | bc)"
 	fi
 	#HEALTH - 2
 fi
-echo $msg	
-send $msg
+
+if [ $health_calc -le 0 ]
+then
+	msg+="vous avez perdu : le jeu est fini"
+	health_calc=10
+	echo "finished" $health_calc
+	modif level 1
+	init_dungeon
+	echo "boss" $health_boss_calc "player" $health_calc
+	modif "health" $health_calc
+	#modif "health_boss" $health_boss_calc
+	echo "$msg"
+	send "$msg"
+	return
+elif [ $health_boss_calc -le 0 ]
+then 
+	msg+="le dragon est mort : vous gagnez un niveau"
+	temp=$(read_var level)
+	echo "level bfore $temp"
+	if [ "$(read_var level)" == "3" ]
+	then
+		echo "level = 1"
+		msg+="le jeu est fini vous avez gagner"
+		health_calc=10
+		modif level 1
+		modif xp 0
+		init_dungeon
+
+		
+	else 
+		echo "level + 1"
+		temp=$(echo "$temp + 1" | bc)
+		echo "level after $temp"
+		modif level $temp
+		init_dungeon
+	fi
+	health_calc=10
+	echo "boss" $health_boss_calc "player" $health_calc
+	modif "health" $health_calc
+	#modif "health_boss" $health_boss_calc
+	echo "$msg"
+	send "$msg"
+	return
+fi
 echo "boss" $health_boss_calc "player" $health_calc
 modif "health" $health_calc
 modif "health_boss" $health_boss_calc
+echo "$msg"
+send "$msg"
 }
 process() {
 echo "$1"
@@ -280,7 +361,9 @@ then
 	#xp=0
 	modif "xp" 0 
 	#health_boss = 120
-	modif health_boss 20
+	modif health_boss 10
+	#health = 10
+	modif health 10
 	echo "player.txt file new"
 	cat player.txt
 elif  echo "$1" | grep -q -E "^inv" 
@@ -307,9 +390,9 @@ elif echo "$1" |  grep -q -E "^donjon"
 then
 	dungeon "$(read_var level)"
 
-elif echo "$1" |  grep -q -E "^attack"
+elif echo "$1" |  grep -q -E "^attaque"
 then
-	echo "attack"
+	echo "attque"
 	if [ "$(read_var type)" == "1" ]
 	then
 		health_calc 1
@@ -319,6 +402,9 @@ then
 	else
 		health_calc 3
 	fi
+elif echo $1 | grep -q -E "^stat"
+then
+	send "vie:$(read_var health) boss:$(read_var health_boss) level:$(read_var level) xp:$(read_var xp) argent:$(read_var argent)"
 fi
 }
 echo $1

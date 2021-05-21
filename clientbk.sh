@@ -90,7 +90,7 @@ force_quit() {
 
 }
 send() {
-	echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>aeslog.txt | nc -w 1 $host $port_out
+	echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>>aeslog.txt | nc -w 1 $host $port_out
 }
 
 receive(){
@@ -180,7 +180,7 @@ echo "*Le combat s'engage*"
 
 while true
 do
-	read -p "que voulez vous faire ? q pour quitter, 0 pour attaquer" input
+	read -p "que voulez vous faire ? q pour quitter, 0 pour attaquer 1 pour les stats de votre personnage : " input
 	if echo $input | tr -d " " | grep -E '^q'
 	then
 		send "q"
@@ -190,12 +190,17 @@ do
 		pkill -f "nc -l -k $port_out"
 		rm -rf outputclient
 		exit
-	elif (( "$input" == "0" ))
+	elif [ "$input" == "0" ]
 	then
 		send "donjon"
 		echo "$(receive)"
-		send "attack"
+		sleep 1
+		send "attaque"
 		echo "$(receive)"
+	elif [ "$input" == "1" ] 
+	then	
+	send "stat"
+	echo "$(receive)"
 	fi
 done
 

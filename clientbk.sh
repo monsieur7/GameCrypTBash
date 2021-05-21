@@ -32,13 +32,13 @@ openssl pkey -in dhkey1.pem -pubout -out dhpub1.pem
 echo "" > outputclient
 echo "sending public key"
 
-sleep 5
+#sleep 2
 
 cat  dhpub1.pem
 cat dhpub1.pem | nc -N -w 1 localhost $port_out # sending 
 echo "listenig for public key"
 
-sleep 5
+sleep 2
 
 #echo "ready" | nc -N -q 1 $host $port
 #nc -l 1301 > /tmp/outputclient
@@ -61,7 +61,7 @@ base64 bob_shared_secret.bin #debug
 echo "" >outputclient
 
 # secure exchange begin here
-sleep 5
+#sleep 5
 
 quit() {
 	printf "\n"
@@ -78,7 +78,17 @@ quit() {
 	fi
 
 }
+force_quit() {
+	printf "\n"
+	send "q"
+	echo "pid to kill" $!
+	pkill $!
+        pkill -f "nc -l -k $port_in"
+	pkill -f "nc -l -k $port_out"
+	rm -rf outputclient
+	exit
 
+}
 send() {
 	echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>aeslog.txt | nc -w 1 $host $port_out
 }
@@ -158,15 +168,34 @@ quit
 
 authentification
 
+
+echo "Enchanté $client_name ! Bienvenue dans notre paisible village."
+echo "Enfin paisible... Pas depuis que 3 redoutables dragons ont fait leur apparition dans la région... La population est terrifiée."
+echo "Nous avons besoin de votre aide ! Vous seul(e) êtes capable de le terrasser."
+echo "Dirigez-vous vers le donjon et débarassez-vous de ce maudit gradon !"
+echo "*Vous vous dirrigez vers le donjon*"
+echo "*Vous entrez dans le donjon et entendez un grognement sourd provenant d'un peu plus loin. Vous avancez prudemment en direction du bruit. Soudain, un dragon surgit devant vous! *"
+echo "Dragon : GROAR !"
+echo "*Le combat s'engage*"
+
 while true
 do
-	echo "Enchanté $client_name ! Bienvenue dans notre paisible village."
-	echo "Enfin paisible... Pas depuis que 3 redoutables dragons ont fait leur apparition dans la région... La population est terrifiée."
-	echo "Nous avons besoin de votre aide ! Vous seul(e) êtes capable de le terrasser."
-	echo "Dirigez-vous vers le donjon et débarassez-vous de ce maudit gradon !"
-	echo "*Vous vous dirrigez vers le donjon*"
-	echo "*Vous entrez dans le donjon et entendez un grognement sourd provenant d'un peu plus loin. Vous avancez prudemment en direction du bruit. Soudain, un dragon surgit devant vous! *"
-	echo "Dragon : GROAR !"
-	echo "*Le combat s'engage*"
-	
+	read -p "que voulez vous faire ? q pour quitter, 0 pour attaquer" input
+	if echo $input | tr -d " " | grep -E '^q'
+	then
+		send "q"
+		echo "pid to kill" $!
+		pkill $!
+                pkill -f "nc -l -k $port_in"
+		pkill -f "nc -l -k $port_out"
+		rm -rf outputclient
+		exit
+	elif (( "$input" == "0" ))
+	then
+		send "donjon"
+		echo "$(receive)"
+		send "attack"
+		echo "$(receive)"
+	fi
 done
+

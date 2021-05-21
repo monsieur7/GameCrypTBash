@@ -12,7 +12,7 @@ xp=0
 health_boss=0
 health=10
 msg=""
-if (($# != 3)) 
+if [ $# != 3 ] 
 then
 	host="localhost"
 	port_in="1301"
@@ -23,11 +23,15 @@ else
 	port_in=$3
 
 fi
+echo $host $port_in $port_out
 # loading mdp + id
 if [ ! -s player.txt ]
 then
 	touch player.txt
+	echo "type:1 mdp:0 id:0 nom:0 argent:0 level:0 xp:0 health:10 health_boss:20" >player.txt
+	echo "creating default player file"
 fi
+cat player.txt
 #	echo "player.txt exist"
 #	type="$(cat player.txt | cut -d " " -f 1)"
 #	mdp="$(cat player.txt | cut -d " " -f 2)"
@@ -55,7 +59,7 @@ openssl pkey -in dhkey2.pem -pubout -out dhpub2.pem #public key
 #sleep 2
 
 nc -z $host $port_out
-while (( $? != 0 )) 
+while [ $? != 0 ] 
 do
 	echo "" >/dev/null
 	nc -z $host $port_out
@@ -94,17 +98,17 @@ send() {
 echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>/dev/null | nc -w 1 $host $port_out
 }
 dungeon(){
-level_dungeon=$1
+level_dungeon=$(read_var level)
 #echo $level_dungeon
-if (( "$level_dungeon" == "1" ))
+if [ "$level_dungeon" == "1" ]
 then
 	send "Attention ! Un dragon arrive !"
 	health_boss="10"
-elif (( "$level_dungeon" == "2" ))
+elif [ "$level_dungeon" == "2" ]
 then
 	send "Attention ! Un gros Dragon arrive !"
 	health_boss="15"
-elif (( "$level_dungeon" == "3" ))
+elif [ "$level_dungeon" == "3" ]
 then
 	send "Attention ! un très gros Dragon arrive !"
 	health_boss="20"
@@ -112,44 +116,48 @@ fi
 }
 
 modif(){
-	# modif variable in file
-if (( $1 == "health" ))
+#echo "$1" "value:$2"
+# modif variable in file
+if echo "$1" | grep -q "^health$"
+then
+	#echo "in health"
+	# modif
+	sed -i  "s/health:$(read_var health)/health:$2/g" player.txt
+elif echo "$1" | grep -q "health_boss"
+then	
+	#echo "in health boss"
+	# modif
+	sed -i  "s/health_boss:$(read_var health_boss)/health_boss:$2/g" player.txt
+elif echo "$1" | grep -q "xp"
 then
 	# modif
-	sed -i "s/health:$(read_var health)/health:$2/g" player.txt
-else if (( $1 == "health_boss" ))
+	sed -i  "s/xp:$(read_var xp)/xp:$2/g" player.txt
+elif echo "$1" | grep -q "level"
 then
 	# modif
-	sed -i "s/health_boss:$(read_var health_boss)/health_boss:$2/g" player.txt
-else if (( $1 == "xp" ))
+	sed -i  "s/level:$(read_var level)/level:$2/g" player.txt
+elif echo "$1" | grep -q "argent"
 then
-	# modif
-	sed -i "s/xp:$(read_var xp)/xp:$2/g" player.txt
-else if (( $1 == "level" ))
-then
-	# modif
-	sed -i "s/level:$(read_var level)/level:$2/g" player.txt
-else if (( $1 == "argent" ))
-then
-	# modif
+	#echo "$(read_var argent)"	# modif
 	sed -i "s/argent:$(read_var argent)/argent:$2/g" player.txt
 
-else if (( $1 == "id" ))
+elif echo "$1" | grep -q "id"
 then
 	# modif
-	sed -i "s/id:$(read_var id)/id:$2/g" player.txt
-else if (( $1 == "nom" ))
+	sed -i   "s/id:$(read_var id)/id:$2/g" player.txt
+elif echo "$1" | grep -q "nom"
 then
 	# modif
-	sed -i "s/nom:$(read_var nom)/nom:$2/g" player.txt
-else if (( $1 == "mdp" ))
+	sed -i   "s/nom:$(read_var nom)/nom:$2/g" player.txt
+elif echo "$1" | grep -q "mdp"
 then
 	# modif
-	sed -i "s/mdp:$(read_var mdp)/mdp:$2/g" player.txt
-else if (( $1 == "type" ))
+	sed -i   "s/mdp:$(read_var mdp)/mdp:$2/g" player.txt
+elif echo "$1" | grep -q "type"
 then
 	# modif
-	sed -i "s/type:$(read_var type)/type:$2/g" player.txt
+	sed -i   "s/type:$(read_var type)/type:$2/g" player.txt
+else echo "problem"
 fi
 
 }
@@ -157,123 +165,139 @@ fi
 read_var(){
 #read var in file
 
-if (( $1 == "health" ))
+if [ $1 == health ]
 then
 	cat player.txt | cut -d " " -f 8 | cut -d ":" -f 2
 
-else if (( $1 == "health_boss" ))
+elif [ "$1" == "health_boss" ]
 then
 	cat player.txt | cut -d " " -f 9 | cut -d ":" -f 2
 
-else if (( $1 == "mdp" ))
+elif [ "$1" == "mdp" ]
 then
 	cat player.txt | cut -d " " -f 2 | cut -d ":" -f 2
 
-else if (( $1 == "id" ))
+elif [ "$1" == "id" ]
 then
 	cat player.txt | cut -d " " -f 3 | cut -d ":" -f 2
 
-else if (( $1 == "type" ))
+elif [ "$1" == "type" ]
 then
 	cat player.txt | cut -d " " -f 1 | cut -d ":" -f 2
 
-else if (( $1 == "nom" ))
+elif [ "$1" == "nom" ]
 then
 	cat player.txt | cut -d " " -f 4 | cut -d ":" -f 2
 
-else if (( $1 == "argent" ))
+elif [ "$1" == "argent" ]
 then
 	cat player.txt | cut -d " " -f 5 | cut -d ":" -f 2
 
-else if (( $1 == "level" ))
+elif [ "$1" == "level" ]
 then
 	cat player.txt | cut -d " " -f 6 | cut -d ":" -f 2
 
-else if (( $1 == "xp" ))
+elif [ "$1" == "xp" ]
 then
 	cat player.txt | cut -d " " -f 7 | cut -d ":" -f 2
 fi
 
 }
+
+
 health_calc() {
 msg=""
-health_calc=$1
-health_boss_calc=$2
+health_calc=$(read_var health)
+health_boss_calc=$(read_var health)
+echo "before :boss" $health_boss_calc "player" $health_calc
 # calcule HEALTH
-if (( "$1" == "1" ))
+if ["$(read_var type)" == "1" ]
 then
 	health_boss="$(echo $health_boss - 1 | bc)"
-	msg+="vous avez infligez 1 de dégats au dragon"
+	msg+="vous avez infligez 1 de dégats au dragon "
 	# DRAGON - 1
 	#HEALTH - 1 3 fois sur 4
-	if (( "$((RANDOM % 4))" == "3" ))
+	if [ "$[RANDOM % 4]" == "3" ]
 	then
-		 msg+="vous n'avez pas pris de dégats"
+		 msg+="vous n'avez pas pris de dégats "
 	else
-		msg+="vous avez prix 1 de dégats"
-		$health_calc="$(echo $health_calc - 1 | bc)"
+		msg+="vous avez prix 1 de degats "
+		health_calc="$(echo $health_calc - 1 | bc)"
 	fi
-elif (( "$1" == "2" ))
+elif [ "$(read_var type)" == "2" ]
 then
-	if (( "$((RANDOM % 2))" == "1" ))
+	if [ "$[RANDOM % 2]" == "1" ]
 	then
-		msg+="vous avez infliger 2 de dégats au dragon"
+		msg+="vous avez infliger 2 de degats au dragon "
 	else
-		msg+="vous avez pris 1 de dégats"
-		$health_calc="$(echo $health_calc - 1 | bc)"
+		msg+="vous avez pris 1 de dégats "
+		health_calc="$(echo $health_calc - 1 | bc)"
 	fi
-	if (( "$((RANDOM % 4))" == "3" ))
+	if [ "$[RANDOM % 4]" == "3" ]
 	then
-		 msg+="vous n'avez pas pris de dégats"
+		 msg+="vous n'avez pas pris de degats "
 	else
-		msg+="vous avez prix 2 de dégats"
-		$health_calc="$(echo $health_calc - 2 | bc)"
+		msg+="vous avez prix 2 de degats "
+		health_calc="$(echo $health_calc - 2 | bc)"
 	fi
 	#DRAGON - 2 1 fois sur 2 sinon -1
 	#HEALTH - 2
 else 
 	health_boss_calc="$(echo $health_boss_calc - 3 | bc)"
-	msg+="vous avez infliez trois de dégats au dragon"
+	msg+="vous avez infliez trois de degats au dragon "
 	#DRAGON - 3
-	if (( "$((RANDOM % 4))" == "3" ))
+	if [ "$[RANDOM % 4]" == "3" ]
 	then
 		 msg+="vous n'avez pas pris de dégats"
 	else
-		msg+="vous avez prix 2 de dégats"
-		$health_calc="$(echo $health_calc - 2 | bc)"
+		msg+="vous avez prix 2 de degats"
+		health_calc="$(echo $health_calc - 2 | bc)"
 	fi
 	#HEALTH - 2
 fi
 echo $msg	
 send $msg
-modif "health" $health
-modif "health_boss" $health
+echo "boss" $health_boss_calc "player" $health_calc
+modif "health" $health_calc
+modif "health_boss" $health_boss_calc
 }
 process() {
 echo "$1"
 if echo "$1" | grep -q -E "^new" 
 then
-	nom="$(echo $1 | cut -d " " -f 2)"
-	type="$(echo $1 | cut -d " " -f 3)"
-	id="$(echo $1 | cut -d " " -f 4)"
-	mdp="$(echo $1 | cut -d " " -f 5)"
-	argent=0
-	level=1
-	xp=0
-	echo "$type $mdp $id $nom $argent $level $xp $health"
+	#echo "$(echo $1 | cut -d " " -f 2)"
+	modif "nom" "$(echo $1 | cut -d " " -f 2)"
+	#echo "$(echo $1 | cut -d " " -f 3)"
+	modif "type" "$(echo $1 | cut -d " " -f 3)"
+	#echo "$(echo $1 | cut -d " " -f 4)"
+	modif "id" "$(echo $1 | cut -d " " -f 4)"
+	#echo "$(echo $1 | cut -d " " -f 5)"
+	modif "mdp" "$(echo $1 | cut -d " " -f 5)"
+	#argent=0
+	modif "argent" "0"
+	#level=1
+	modif "level" 1
+	#xp=0
+	modif "xp" 0 
+	#health_boss = 120
+	modif health_boss 20
+	echo "player.txt file new"
+	cat player.txt
 elif  echo "$1" | grep -q -E "^inv" 
 then
-	if (( "$(echo "$1" | cut -d " " -f 2)"  == "print" )) 
+	if [ "$(echo "$1" | cut -d " " -f 2)"  == "print" ] 
 	then
 		#print inv
 		send "inv : !" #TODO
 	fi
 elif  echo "$1" |  grep -q -E "^auth" 
 then
-	if (( "$(echo "$1" | cut -d " " -f 2)" == "$id" ))  && (( "$(echo "$1" | cut -d " " -f 3)" == "$mdp" ))
+	echo "id $(read_var id)" $(echo $1 | cut -d " " -f 2) 
+	echo "mdp $(read_var mdp)" $(echo $1 | cut -d " " -f 3)
+	if [ $(echo $1 | cut -d " " -f 2) == $(read_var id) ] && [ $(echo $1 | cut -d " " -f 3) == $(read_var mdp) ]
 	then
 		send "0"
-		echo "bonjour $nom"
+		echo "bonjour $(read_var nom)"
 		auth=1
 	else 
 		echo "authentification has failed"
@@ -281,15 +305,15 @@ then
 	fi
 elif echo "$1" |  grep -q -E "^donjon"
 then
-	echo "$2"
-	dungeon $2
+	dungeon "$(read_var level)"
 
 elif echo "$1" |  grep -q -E "^attack"
 then
-	if (( "$type" == "1" ))
+	echo "attack"
+	if [ "$(read_var type)" == "1" ]
 	then
 		health_calc 1
-	elif (( "$type" == "2" ))
+	elif [ "(read_var type)" == "2" ]
 	then
 		health_calc 2
 	else
@@ -303,7 +327,7 @@ echo "beginning receiving"
 while true
 do
 	cat output | tr -d '\000'| grep -q -E '[A-Za-z+/\\=]+'
-	while (( $? > 0))
+	while (( $? > 0 ))
 	do	
 	#printf "."
 		sleep 1
@@ -329,7 +353,7 @@ do
 	then
 		clear
 	else
-		process "$result" $level
+		process "$result"
 	fi
 	echo "" >output
 done

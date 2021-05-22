@@ -95,16 +95,16 @@ send() {
 
 receive(){
 
-cat outputclient | tr -d '\000'| grep -q -E '[A-Za-z/\\=]+'
+cat outputclient | tr -d '\000'| grep -q -E '[0-9A-Za-z/\\=]+'
 while (( $? > 0))
 do
 	#printf "."
 	#sleep 1
-	cat outputclient | tr -d '\000' | grep -q -E '^[A-Za-z/\\=]+'
+	cat outputclient | tr -d '\000' | grep -q -E '^[0-9A-Za-z/\\=]+'
 done
 #printf "\n"
 # RECEIVE LOOP 
-echo "$(cat outputclient |tr -d '\000' | grep -E '^[A-Za-z/\\=]+' | openssl enc -aes256 -base64 -kfile alice_shared_secret.bin -d 2>/dev/null)"
+echo "$(cat outputclient |tr -d '\000' | grep -E '^[0-9A-Za-z/\\=]+' | openssl enc -aes256 -base64 -kfile alice_shared_secret.bin -d 2>/dev/null)"
 echo "" > outputclient
 }
 

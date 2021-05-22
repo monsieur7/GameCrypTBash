@@ -139,15 +139,15 @@ level_dungeon=$(read_var level)
 if [ "$level_dungeon" == "1" ]
 then
 	send "Attention ! Un dragon arrive !"
-	health_boss="10"
+#	health_boss="10"
 elif [ "$level_dungeon" == "2" ]
 then
 	send "Attention ! Un gros Dragon arrive !"
-	health_boss="15"
+#	health_boss="15"
 elif [ "$level_dungeon" == "3" ]
 then
 	send "Attention ! un très gros Dragon arrive !"
-	health_boss="20"
+#	health_boss="20"
 fi
 }
 
@@ -244,7 +244,7 @@ fi
 health_calc() {
 msg=""
 health_calc=$(read_var health)
-health_boss_calc=$(read_var health)
+health_boss_calc=$(read_var health_boss)
 echo "before :boss" $health_boss_calc "player" $health_calc
 # calcule HEALTH
 if [ "$(read_var type)" == "1" ]
@@ -257,7 +257,7 @@ then
 	then
 		 msg+="vous n'avez pas pris de degats "
 	else
-		msg+="vous avez prix 1 de degats "
+		msg+="vous avez pris 1 de degats "
 		health_calc="$(echo $health_calc - 1 | bc)"
 	fi
 elif [ "$(read_var type)" == "2" ]
@@ -287,7 +287,7 @@ else
 	then
 		 msg+="vous n'avez pas pris de degats"
 	else
-		msg+="vous avez prix 2 de degats"
+		msg+="vous avez pris 2 de degats"
 		health_calc="$(echo $health_calc - 2 | bc)"
 	fi
 	#HEALTH - 2
@@ -314,7 +314,7 @@ then
 	if [ "$(read_var level)" == "3" ]
 	then
 		echo "level = 1"
-		msg+="le jeu est fini vous avez gagner"
+		msg+="le jeu est fini vous avez gagne"
 		health_calc=10
 		modif level 1
 		modif xp 0
@@ -329,7 +329,7 @@ then
 		init_dungeon
 	fi
 	health_calc=10
-	echo "boss" $health_boss_calc "player" $health_calc
+	echo "boss after dead " $health_boss_calc "player" $health_calc
 	modif "health" $health_calc
 	#modif "health_boss" $health_boss_calc
 	echo "$msg"

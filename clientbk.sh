@@ -2,8 +2,9 @@
 
 first_time=0
 
+#detection de si le fichier est exécuté avec ou sans argument (hôte et port)
 if (($# != 3)) 
-then
+then	
 	host="localhost"
 	port_in="1302"
 	port_out="1301"
@@ -13,9 +14,10 @@ else
 	port_out=$3
 fi
 
-#touch /tmp/outputclient
+#touch /tmp/outputclient #debug
 nc -l -k $port_in >outputclient 2>>log.txt & # launch daemon
 
+#regarde si le fichier est vide
 while (( $(wc -c outputclient | cut -d " " -f 1) <= 1  ))
 do
 	#debug
@@ -27,13 +29,15 @@ echo "received parameter"
 sleep 2
 
 #openssl genpkey -genparam -algorithm  DH -out dhp.pem
-openssl genpkey -paramfile outputclient -out dhkey1.pem
-openssl pkey -in dhkey1.pem -pubout -out dhpub1.pem
+openssl genpkey -paramfile outputclient -out dhkey1.pem #clef privée
+openssl pkey -in dhkey1.pem -pubout -out dhpub1.pem #clef publique
+
 echo "" > outputclient
 echo "sending public key"
 
 #sleep 2
 
+#affiche la clef publique et l'envoie au serveur
 cat  dhpub1.pem
 cat dhpub1.pem | nc -N -w 1 localhost $port_out # sending 
 echo "listenig for public key"
@@ -43,6 +47,8 @@ sleep 2
 #echo "ready" | nc -N -q 1 $host $port
 #nc -l 1301 > /tmp/outputclient
 #rm -rf outputclient
+
+#teste si la clef est reçue
 while [ ! -s outputclient ] 
 do
 	echo "" > /dev/null
@@ -51,8 +57,8 @@ echo "received key"
 
 sleep 2
 
-cat outputclient | tail -n +2
-openssl pkeyutl -derive -inkey dhkey1.pem -peerkey <(cat outputclient | tail -n +2 | tr -d "\000") -out bob_shared_secret.bin
+cat outputclient | tail -n +2 #debug
+openssl pkeyutl -derive -inkey dhkey1.pem -peerkey <(cat outputclient | tail -n +2 | tr -d "\000") -out bob_shared_secret.bin #créer le secret; le tr sert à supprimer le binaire car openssh n'aime pas le binaire
 
 echo "secret"
 base64 bob_shared_secret.bin #debug
@@ -63,9 +69,10 @@ echo "" >outputclient
 # secure exchange begin here
 #sleep 5
 
+#fonction qui propose à l'utilisateur de quitter et permet de quitter
 quit() {
 	printf "\n"
-	read -r -p "quitter ? (q) entrer pour continuer : " input
+	read -r -p "quitter ? (q) : " input
 	if echo $input | tr -d " " | grep -E '^q'
 	then
 		send "q"
@@ -78,6 +85,8 @@ quit() {
 	fi
 
 }
+
+#fonction qui permet de quitter
 force_quit() {
 	printf "\n"
 	send "q"
@@ -89,23 +98,30 @@ force_quit() {
 	exit
 
 }
+
+# Envoie un message au serveur
+# @param $1: message à envoyer
 send() {
 	echo "$1" | openssl enc -aes256 -base64 -kfile bob_shared_secret.bin -e 2>>aeslog.txt | nc -w 1 $host $port_out
 }
 
+# Reçoit le message
 receive(){
 
-cat outputclient | tr -d '\000'| grep -q -E '[0-9A-Za-z/\\=]+'
-while (( $? > 0))
-do
-	#printf "."
-	#sleep 1
-	cat outputclient | tr -d '\000' | grep -q -E '^[0-9A-Za-z/\\=]+'
-done
-#printf "\n"
-# RECEIVE LOOP 
-echo "$(cat outputclient |tr -d '\000' | grep -E '^[0-9A-Za-z/\\=]+' | openssl enc -aes256 -base64 -kfile alice_shared_secret.bin -d 2>/dev/null)"
-echo "" > outputclient
+	cat outputclient | tr -d '\000'| grep -q -E '[0-9A-Za-z/\\=]+'
+	
+	while (( $? > 0))
+	do
+		#printf "."
+		#sleep 1
+		cat outputclient | tr -d '\000' | grep -q -E '^[0-9A-Za-z/\\=]+'
+	done
+	
+	#printf "\n"
+	# RECEIVE LOOP
+	
+	echo "$(cat outputclient |tr -d '\000' | grep -E '^[0-9A-Za-z/\\=]+' | openssl enc -aes256 -base64 -kfile alice_shared_secret.bin -d 2>/dev/null)"
+	echo "" > outputclient
 }
 
 
@@ -115,7 +131,7 @@ authentification(){
 
 	read -p "Etes-vous d'ores et déjà inscrit (Oui:1/Non:0)? " first_time
 
-	#First authentification on the serveur
+	#First authentification on the server
 	if (( $first_time == 0 ))
 	then
 		read -p "Quel sera le nom de votre personnage ? " new_client_name
@@ -124,17 +140,20 @@ authentification(){
 		printf "\n"		
 		read -s -p "Confirmez votre mot de passe (celui-ci ne s'affiche pas) : " new_client_mdp2
 		printf "\n"
+
 		while (( "$new_client_mdp2" != "$new_client_mdp" ))
 		do
 			read -s -p "Mot de passe incorrect, veuillez réessayer : " new_client_mdp2
-		printf "\n"
-		done		
+			printf "\n"
+		done
+		
 		new_client_id=$(( $RANDOM % 10 ))$(( $RANDOM % 10 ))$(( $RANDOM % 10 ))$(( $RANDOM % 10 )) #Generates the id of the new client
 		send "new $new_client_name $new_client_perso $new_client_name $new_client_mdp" 
+		
 		#Sends authentification information to the server
 		send "auth $new_client_name $new_client_mdp"
 		
-	#Normal Authentification on the serveur	
+	#Normal Authentification on the server	
 	else
 		read -p "Entrez le nom de votre personnage : " client_name
 		read -s -p "Entrez votre mot de passe (celui-ci ne s'affiche pas) : " client_mdp
@@ -168,7 +187,7 @@ quit
 
 authentification
 
-
+#Texte d'accueil
 echo "Enchanté $client_name ! Bienvenue dans notre paisible village."
 echo "Enfin paisible... Pas depuis que 3 redoutables dragons ont fait leur apparition dans la région... La population est terrifiée."
 echo "Nous avons besoin de votre aide ! Vous seul(e) êtes capable de le terrasser."
@@ -183,6 +202,7 @@ do
 	read -p "que voulez vous faire ? q pour quitter, 0 pour attaquer 1 pour les stats de votre personnage : " input
 	if echo $input | tr -d " " | grep -E '^q'
 	then
+		# Quitter
 		send "q"
 		echo "pid to kill" $!
 		pkill $!
@@ -192,6 +212,7 @@ do
 		exit
 	elif [ "$input" == "0" ]
 	then
+		# Combat contre le dragon 
 		send "donjon"
 		echo "$(receive)"
 		sleep 1
@@ -199,8 +220,9 @@ do
 		echo "$(receive)"
 	elif [ "$input" == "1" ] 
 	then	
-	send "stat"
-	echo "$(receive)"
+		# Affiche les statistiques du personnage
+		send "stat"
+		echo "$(receive)"
 	fi
 done
 

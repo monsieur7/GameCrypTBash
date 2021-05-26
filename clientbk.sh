@@ -65,7 +65,7 @@ echo "" >outputclient
 
 quit() {
 	printf "\n"
-	read -r -p "quitter ? (q) : " input
+	read -r -p "quitter ? (q) entrer pour continuer : " input
 	if echo $input | tr -d " " | grep -E '^q'
 	then
 		send "q"
